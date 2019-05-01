@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
@@ -44,6 +45,7 @@ public class JWTAuthorizerFilter extends BasicAuthenticationFilter {
 			if(StringUtils.isNotBlank(token) && token.startsWith(AUTH_PREFIX)
 			   && StringUtils.isNotBlank(appname) && StringUtils.isNotBlank(httpMethod) && StringUtils.isNotBlank(route)) {
 				
+				response.addHeader("Content-Type", MediaType.APPLICATION_JSON_VALUE);
 				HttpMethod.valueOf(httpMethod); // throw exception if invalid http method 
 				String requested = appname.concat(route).concat(httpMethod);
 				token = token.replace(AUTH_PREFIX, "");
