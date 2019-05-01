@@ -10,7 +10,9 @@ import br.com.tcc.authorizer.security.UserSecurity;
 @Service
 public class UserSecurityServiceImpl implements UserDetailsService {
 
+	private static final UserDetails DEFAULT_USER_DETAILS = new UserSecurity();
+	
 	@Override
 	public UserDetails loadUserByUsername(String login) throws UsernameNotFoundException {
-		return new UserSecurity(); // not used
+		return DEFAULT_USER_DETAILS; // not used
 	}}

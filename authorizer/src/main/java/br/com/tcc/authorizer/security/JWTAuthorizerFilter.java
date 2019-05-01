@@ -12,11 +12,13 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 
 public class JWTAuthorizerFilter extends BasicAuthenticationFilter {
 
@@ -34,13 +36,16 @@ public class JWTAuthorizerFilter extends BasicAuthenticationFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
 		
 		try {
+			String route = request.getHeader("route");
+			String appname = request.getHeader("appname");
+			String httpMethod = request.getHeader("http_method");
 			String token = request.getHeader("Authentication");
-			String requested = request.getHeader("appname")
-									  .concat(request.getHeader("route"))
-									  .concat(request.getHeader("method"));
 			
-			if(StringUtils.isNotBlank(token) && token.startsWith(AUTH_PREFIX)) {
+			if(StringUtils.isNotBlank(token) && token.startsWith(AUTH_PREFIX)
+			   && StringUtils.isNotBlank(appname) && StringUtils.isNotBlank(httpMethod) && StringUtils.isNotBlank(route)) {
 				
+				HttpMethod.valueOf(httpMethod); // throw exception if invalid http method 
+				String requested = appname.concat(route).concat(httpMethod);
 				token = token.replace(AUTH_PREFIX, "");
 				Claims claims = jwtUtil.getClaims(token);
 				
@@ -55,28 +60,28 @@ public class JWTAuthorizerFilter extends BasicAuthenticationFilter {
 					
 					if(optAuthority.isPresent()) {
 						response.getWriter().append(
-								"{\"Success\" : \"true\",\"message\" : \"User authorized. \"}");
+								"{\"Success\" : \"true\",\"message\" : \"User authorized. \", \"request_status\": 200}");
 					} else {
 						response.getWriter().append(
-								"{\"Success\" : \"true\",\"message\" : \"User unauthorized. \"}");
+								"{\"Success\" : \"true\",\"message\" : \"User unauthorized. \", \"request_status\": 403}");
 					}
-					
-					
 				}
+			} else {
+				response.setStatus(HttpStatus.BAD_REQUEST.value());
+				response.getWriter().append(
+						"{\"Success\" : \"true\",\"message\" : \"authentication, appname, route and http_method are required.\", \"request_status\": 401}");
 			}
-		} catch (Exception e) {
+			
+		} catch (ExpiredJwtException e) {
 			response.getWriter().append(
-					"{\"Success\" : \"false\",\"message\" : \"Couldn't authorize the user request. " + e.getMessage() + "\"}");
+					"{\"Success\" : \"true\",\"message\" : \"Couldn't authorize the user request. " + e.getMessage() + "\", \"request_status\": 403}");
+		
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.getWriter().append(
+					"{\"Success\" : \"false\",\"message\" : \"Couldn't authorize the user request. " + e.getMessage() + "\", \"request_status\": 403}");
 		}
 		
-	}
-	
-	@Override
-	protected void onUnsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-			AuthenticationException failed) throws IOException {
-
-		response.getWriter().append("aaa").flush();
-
 	}
 	
 }
