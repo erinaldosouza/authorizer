@@ -5,38 +5,43 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 
-public class JWTAuthorizerFilter extends BasicAuthenticationFilter {
+@Configuration
+public class JWTAuthorizerFilter implements Filter {
 
 	private final JWTUtil jwtUtil;
 	private static final String AUTH_PREFIX = "Bearer ";
 
 	@Autowired
-	public JWTAuthorizerFilter(	JWTUtil jwtUtil, AuthenticationManager authenticationManager) {
-		super(authenticationManager);
+	public JWTAuthorizerFilter(JWTUtil jwtUtil) {
 		this.jwtUtil = jwtUtil;
 	}
 
 	@Override
 	@SuppressWarnings("unchecked")
-	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+		HttpServletRequest request = (HttpServletRequest) req;
+		HttpServletResponse response = (HttpServletResponse) res;
 		
-		try {
+		try {			
+
 			String route = request.getHeader("route");
 			String appname = request.getHeader("appname");
 			String httpMethod = request.getHeader("http_method");
