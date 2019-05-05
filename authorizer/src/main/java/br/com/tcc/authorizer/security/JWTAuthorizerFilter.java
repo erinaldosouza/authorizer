@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -59,10 +60,10 @@ public class JWTAuthorizerFilter implements Filter {
 				if(claims != null) {
 					
 					List<Map<String, String>> autorities = (List<Map<String, String>>)claims.get(jwtUtil.getTokenAuthoritiesKey());
-					
+
 					Optional<Map<String, String>> optAuthority = 
 													autorities.stream().filter(auth -> {
-														return requested.equals(auth.get("authority"));
+														return Pattern.matches(auth.get("authority"), requested);
 													}).findFirst();
 					
 					if(optAuthority.isPresent()) {
